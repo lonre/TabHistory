@@ -60,11 +60,11 @@ class TabHistoryCommand(sublime_plugin.WindowCommand):
                 for p in folder_paths:
                     if file_name.startswith(p):
                         file_name = os.path.relpath(file_name, p)
-                        if is_view and is_dirty_view:
-                            file_name = '* ' + file_name
-                        if not is_view:
-                            file_name = 'x ' + file_name
                         break
+                if is_view and is_dirty_view:
+                    file_name = '* ' + file_name
+                if not is_view:
+                    file_name = 'x ' + file_name
                 tab_names.append(file_name)
             else:
                 tab_names.append('untitled')
