@@ -13,9 +13,7 @@ import os
 
 class TabHistoryCommand(sublime_plugin.WindowCommand):
 
-    last_item = None
-    all_tabs = []
-    closed_tabs = []
+    last_item, all_tabs, closed_tabs = None, [], []
 
     def run(self, cmd='', args=[]):
         if cmd == 'close':
@@ -36,8 +34,7 @@ class TabHistoryCommand(sublime_plugin.WindowCommand):
             self.window.open_file(selected_item)
 
     def cal_all_tabs(self):
-        tabs = []
-        views = self.window.views()
+        tabs, views = [], self.window.views()
         for v in views:
             if v.file_name() in self.closed_tabs:
                 self.closed_tabs.remove(v.file_name())
@@ -49,25 +46,28 @@ class TabHistoryCommand(sublime_plugin.WindowCommand):
         return tabs
 
     def tab_names(self):
-        tab_names = []
+        tab_names, folder_paths = [], []
+        folders = self.window.project_data().get('folders')
+        if folders and isinstance(folders, list):
+            folder_paths = [folder.get('path') for folder in folders]
         for v in self.all_tabs:
+            is_view = is_dirty_view = False
             file_name = v
             if isinstance(v, sublime.View):
                 file_name = v.file_name()
-                if v.is_dirty():
-                    file_name = '* ' + file_name
+                is_view, is_dirty_view = True, v.is_dirty()
             if file_name is not None:
+                for p in folder_paths:
+                    if file_name.startswith(p):
+                        file_name = os.path.relpath(file_name, p)
+                        if is_view and is_dirty_view:
+                            file_name = '* ' + file_name
+                        if not is_view:
+                            file_name = 'x ' + file_name
+                        break
                 tab_names.append(file_name)
             else:
                 tab_names.append('untitled')
-        folders = self.window.project_data().get('folders')
-        if folders and isinstance(folders, list):
-            file_paths = [folder.get('path') for folder in folders]
-            for index, name in enumerate(tab_names):
-                for p in file_paths:
-                    if name.startswith(p):
-                        tab_names[index] = os.path.relpath(name, p)
-                        break
 
         return tab_names
 
